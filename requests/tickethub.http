@@ -1,0 +1,25 @@
+# Manual calls against the gateway (Aspire: 5200, docker-compose: 5250).
+@gateway = http://localhost:5200
+@jazzNight = 0197a000-0000-7000-8000-000000000001
+
+### List events
+GET {{gateway}}/catalog/events
+
+### Seat map (copy a seatId from here)
+GET {{gateway}}/catalog/events/{{jazzNight}}/seat-map
+
+### Hold seats
+POST {{gateway}}/booking/reservations
+Content-Type: application/json
+X-User-Id: alice
+X-User-Email: alice@example.com
+
+{
+  "eventId": "{{jazzNight}}",
+  "seatIds": ["<seat-id>"]
+}
+
+### Get a reservation
+GET {{gateway}}/booking/reservations/<reservation-id>
+X-User-Id: alice
+X-User-Email: alice@example.com

@@ -12,3 +12,7 @@ Each ADR records one decision that a reviewer could reasonably question. They us
 |---|---|---|
 | [0001](0001-service-boundaries-and-data-ownership.md) | Service boundaries and data ownership | Accepted |
 | [0002](0002-messaging-with-rabbitmq-client.md) | Messaging on RabbitMQ.Client instead of Wolverine | Accepted |
+| [0003](0003-transactional-outbox-and-idempotent-consumers.md) | Transactional outbox and idempotent consumers | Accepted |
+| [0004](0004-preventing-overbooking.md) | Preventing overbooking with optimistic concurrency | Accepted |
+| [0005](0005-seat-availability-sync-check-async-projection.md) | Seat availability: sync sellability check + async projection | Accepted |
+| [0012](0012-code-organisation.md) | Code organisation: one project per service, vertical slices | Accepted |
