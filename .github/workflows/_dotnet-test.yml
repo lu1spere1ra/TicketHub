@@ -1,0 +1,25 @@
+# Reusable: restore, build and test one test project. Each service workflow calls this with its own path filters,
+# so a change to Catalog only runs Catalog's tests (plus anything that depends on shared code).
+name: dotnet-test
+
+on:
+  workflow_call:
+    inputs:
+      project:
+        description: Test project path
+        required: true
+        type: string
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Build
+        run: dotnet build ${{ inputs.project }} -c Release
+      - name: Test
+        run: dotnet test --project ${{ inputs.project }} -c Release --no-build

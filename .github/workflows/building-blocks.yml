@@ -1,0 +1,28 @@
+name: building-blocks
+
+on:
+  push:
+    branches: [main, "claude/**"]
+    paths:
+      - "src/TicketHub.BuildingBlocks/**"
+      - "tests/TicketHub.BuildingBlocks.Tests/**"
+      - "tests/TicketHub.TestKit/**"
+      - "Directory.*.props"
+      - "global.json"
+      - ".github/workflows/building-blocks.yml"
+      - ".github/workflows/_dotnet-test.yml"
+  pull_request:
+    paths:
+      - "src/TicketHub.BuildingBlocks/**"
+      - "tests/TicketHub.BuildingBlocks.Tests/**"
+      - "tests/TicketHub.TestKit/**"
+      - "Directory.*.props"
+      - "global.json"
+      - ".github/workflows/building-blocks.yml"
+      - ".github/workflows/_dotnet-test.yml"
+
+jobs:
+  test:
+    uses: ./.github/workflows/_dotnet-test.yml
+    with:
+      project: tests/TicketHub.BuildingBlocks.Tests

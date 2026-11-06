@@ -1,0 +1,36 @@
+name: booking
+
+on:
+  push:
+    branches: [main, "claude/**"]
+    paths:
+      - "src/TicketHub.Booking/**"
+      - "src/TicketHub.Catalog/Protos/**"
+      - "src/TicketHub.BuildingBlocks/**"
+      - "src/TicketHub.Contracts/**"
+      - "src/TicketHub.ServiceDefaults/**"
+      - "tests/TicketHub.Booking.Tests/**"
+      - "tests/TicketHub.TestKit/**"
+      - "Directory.*.props"
+      - "global.json"
+      - ".github/workflows/booking.yml"
+      - ".github/workflows/_dotnet-test.yml"
+  pull_request:
+    paths:
+      - "src/TicketHub.Booking/**"
+      - "src/TicketHub.Catalog/Protos/**"
+      - "src/TicketHub.BuildingBlocks/**"
+      - "src/TicketHub.Contracts/**"
+      - "src/TicketHub.ServiceDefaults/**"
+      - "tests/TicketHub.Booking.Tests/**"
+      - "tests/TicketHub.TestKit/**"
+      - "Directory.*.props"
+      - "global.json"
+      - ".github/workflows/booking.yml"
+      - ".github/workflows/_dotnet-test.yml"
+
+jobs:
+  test:
+    uses: ./.github/workflows/_dotnet-test.yml
+    with:
+      project: tests/TicketHub.Booking.Tests

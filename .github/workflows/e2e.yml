@@ -1,0 +1,28 @@
+name: e2e
+
+on:
+  push:
+    branches: [main, "claude/**"]
+    paths:
+      - "src/**"
+      - "tests/TicketHub.EndToEnd.Tests/**"
+      - "tests/TicketHub.TestKit/**"
+      - "Directory.*.props"
+      - "global.json"
+      - ".github/workflows/e2e.yml"
+      - ".github/workflows/_dotnet-test.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/TicketHub.EndToEnd.Tests/**"
+      - "tests/TicketHub.TestKit/**"
+      - "Directory.*.props"
+      - "global.json"
+      - ".github/workflows/e2e.yml"
+      - ".github/workflows/_dotnet-test.yml"
+
+jobs:
+  test:
+    uses: ./.github/workflows/_dotnet-test.yml
+    with:
+      project: tests/TicketHub.EndToEnd.Tests

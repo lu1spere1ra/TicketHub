@@ -1,0 +1,30 @@
+name: gateway
+
+on:
+  push:
+    branches: [main, "claude/**"]
+    paths:
+      - "src/TicketHub.Gateway/**"
+      - "src/TicketHub.ServiceDefaults/**"
+      - "tests/TicketHub.Gateway.Tests/**"
+      - "tests/TicketHub.TestKit/**"
+      - "Directory.*.props"
+      - "global.json"
+      - ".github/workflows/gateway.yml"
+      - ".github/workflows/_dotnet-test.yml"
+  pull_request:
+    paths:
+      - "src/TicketHub.Gateway/**"
+      - "src/TicketHub.ServiceDefaults/**"
+      - "tests/TicketHub.Gateway.Tests/**"
+      - "tests/TicketHub.TestKit/**"
+      - "Directory.*.props"
+      - "global.json"
+      - ".github/workflows/gateway.yml"
+      - ".github/workflows/_dotnet-test.yml"
+
+jobs:
+  test:
+    uses: ./.github/workflows/_dotnet-test.yml
+    with:
+      project: tests/TicketHub.Gateway.Tests

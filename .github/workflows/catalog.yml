@@ -1,0 +1,34 @@
+name: catalog
+
+on:
+  push:
+    branches: [main, "claude/**"]
+    paths:
+      - "src/TicketHub.Catalog/**"
+      - "src/TicketHub.BuildingBlocks/**"
+      - "src/TicketHub.Contracts/**"
+      - "src/TicketHub.ServiceDefaults/**"
+      - "tests/TicketHub.Catalog.Tests/**"
+      - "tests/TicketHub.TestKit/**"
+      - "Directory.*.props"
+      - "global.json"
+      - ".github/workflows/catalog.yml"
+      - ".github/workflows/_dotnet-test.yml"
+  pull_request:
+    paths:
+      - "src/TicketHub.Catalog/**"
+      - "src/TicketHub.BuildingBlocks/**"
+      - "src/TicketHub.Contracts/**"
+      - "src/TicketHub.ServiceDefaults/**"
+      - "tests/TicketHub.Catalog.Tests/**"
+      - "tests/TicketHub.TestKit/**"
+      - "Directory.*.props"
+      - "global.json"
+      - ".github/workflows/catalog.yml"
+      - ".github/workflows/_dotnet-test.yml"
+
+jobs:
+  test:
+    uses: ./.github/workflows/_dotnet-test.yml
+    with:
+      project: tests/TicketHub.Catalog.Tests
