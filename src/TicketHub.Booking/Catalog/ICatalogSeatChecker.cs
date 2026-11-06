@@ -1,4 +1,5 @@
 using Grpc.Core;
+using Microsoft.Extensions.Options;
 using TicketHub.BuildingBlocks;
 using TicketHub.Catalog.Grpc;
 
@@ -18,7 +19,8 @@ public interface ICatalogSeatChecker
 public sealed class CatalogUnavailableException(string message, Exception inner) : Exception(message, inner);
 
 /// <summary>Adapter over the generated gRPC client; keeps protobuf types out of the booking code.</summary>
-internal sealed class GrpcCatalogSeatChecker(SeatSellability.SeatSellabilityClient client) : ICatalogSeatChecker
+internal sealed class GrpcCatalogSeatChecker(
+    SeatSellability.SeatSellabilityClient client, IOptions<CatalogClientOptions> options) : ICatalogSeatChecker
 {
     public async Task<SeatCheckResult> CheckAsync(Guid eventId, IReadOnlyCollection<Guid> seatIds, CancellationToken ct)
     {
@@ -28,8 +30,9 @@ internal sealed class GrpcCatalogSeatChecker(SeatSellability.SeatSellabilityClie
         CheckSeatsResponse response;
         try
         {
-            response = await client.CheckSeatsAsync(request, cancellationToken: ct);
+            response = await client.CheckSeatsAsync(request, deadline: DateTime.UtcNow + options.Value.TotalTimeout, cancellationToken: ct);
         }
+        // Transport failures, timeouts and an open circuit (BrokenCircuitException) all surface as RpcException.
         catch (RpcException ex) when (ex.StatusCode is StatusCode.Unavailable or StatusCode.DeadlineExceeded or StatusCode.Internal or StatusCode.Unknown)
         {
             throw new CatalogUnavailableException("Catalog did not answer CheckSeats.", ex);

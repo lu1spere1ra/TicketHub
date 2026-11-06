@@ -12,7 +12,7 @@ using TicketHub.Booking.Features.Reservations;
 namespace TicketHub.Booking.Tests.Integration;
 
 /// <summary>The real Booking host on a fresh database, with Catalog replaced by <see cref="FakeCatalog"/>.</summary>
-public sealed class BookingApp(string database, string rabbitMq) : WebApplicationFactory<Program>
+public sealed class BookingApp(string database, string rabbitMq, string? realCatalogAddress = null) : WebApplicationFactory<Program>
 {
     public FakeCatalog Catalog { get; } = new();
 
@@ -30,10 +30,23 @@ public sealed class BookingApp(string database, string rabbitMq) : WebApplicatio
         builder.UseSetting("Messaging:QueuePrefix", Exchange + ".");
         builder.UseSetting("Messaging:RetryDelay", "00:00:00.200");
         builder.UseSetting("Messaging:OutboxPollInterval", "00:00:00.050");
-        builder.ConfigureLogging(logging => logging.ClearProviders());
+        builder.ConfigureLogging(logging => { logging.ClearProviders(); if (Environment.GetEnvironmentVariable("TEST_LOGS") == "1") { logging.AddConsole(); logging.SetMinimumLevel(LogLevel.Debug); } });
+        if (realCatalogAddress is not null)
+        {
+            // Exercise the real gRPC client and its resilience pipeline, with thresholds small enough for a test.
+            builder.UseSetting("Catalog:GrpcAddress", realCatalogAddress);
+            builder.UseSetting("Catalog:CircuitMinimumThroughput", "4");
+            builder.UseSetting("Catalog:CircuitBreakDuration", "00:00:01");
+            builder.UseSetting("Catalog:AttemptTimeout", "00:00:00.500");
+        }
+
         builder.ConfigureTestServices(services =>
         {
-            services.AddSingleton<ICatalogSeatChecker>(Catalog);
+            if (realCatalogAddress is null)
+            {
+                services.AddSingleton<ICatalogSeatChecker>(Catalog);
+            }
+
             services.AddSingleton<TimeProvider>(Clock);
         });
     }

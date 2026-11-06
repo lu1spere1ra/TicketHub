@@ -20,8 +20,10 @@ builder.AddTicketHubMessaging<BookingDbContext>(messaging => messaging
     .Consumes<PaymentRefunded, PaymentRefundedHandler>("booking.payment-events"));
 
 builder.Services.AddOptions<HoldOptions>().Bind(builder.Configuration.GetSection(HoldOptions.SectionName));
-builder.Services.AddGrpcClient<SeatSellability.SeatSellabilityClient>(client =>
-    client.Address = new Uri(builder.Configuration["Catalog:GrpcAddress"] ?? "http://_grpc.catalog"));
+builder.Services.AddOptions<CatalogClientOptions>().Bind(builder.Configuration.GetSection(CatalogClientOptions.SectionName));
+var catalogOptions = builder.Configuration.GetSection(CatalogClientOptions.SectionName).Get<CatalogClientOptions>() ?? new();
+builder.Services.AddGrpcClient<SeatSellability.SeatSellabilityClient>(client => client.Address = new Uri(catalogOptions.GrpcAddress))
+    .AddCatalogResilience(catalogOptions);
 builder.Services.AddScoped<ICatalogSeatChecker, GrpcCatalogSeatChecker>();
 
 builder.Services.AddHttpContextAccessor();

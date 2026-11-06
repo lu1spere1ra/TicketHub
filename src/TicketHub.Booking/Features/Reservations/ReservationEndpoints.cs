@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using TicketHub.Booking.Data;
 using TicketHub.BuildingBlocks;
 using TicketHub.BuildingBlocks.Http;
+using TicketHub.BuildingBlocks.Results;
 
 namespace TicketHub.Booking.Features.Reservations;
 
@@ -14,12 +15,22 @@ public static class ReservationEndpoints
     {
         var reservations = app.MapGroup("/reservations").WithTags("Reservations").AddEndpointFilter<RequireCustomerFilter>();
 
-        reservations.MapPost("/", async Task<IResult> (HoldSeatsRequest request, HoldSeatsHandler handler, ICurrentUser user, CancellationToken ct) =>
+        reservations.MapPost("/", async Task<IResult> (
+                HoldSeatsRequest request, HoldSeatsHandler handler, ICurrentUser user, HttpContext http, CancellationToken ct) =>
             {
                 var result = await handler.HandleAsync(new HoldSeatsCommand(request.EventId, request.SeatIds ?? []), user, ct);
-                return result.IsSuccess
-                    ? TypedResults.Created($"/reservations/{result.Value.Id}", result.Value)
-                    : result.Error.ToProblem();
+                if (result.IsSuccess)
+                {
+                    return TypedResults.Created($"/reservations/{result.Value.Id}", result.Value);
+                }
+
+                if (result.Error.Kind == ErrorKind.Unavailable)
+                {
+                    // Roughly how long the circuit stays open before Catalog is tried again.
+                    http.Response.Headers.RetryAfter = "15";
+                }
+
+                return result.Error.ToProblem();
             })
             .WithName("HoldSeats");
 
