@@ -1,0 +1,21 @@
+{
+  "seat": "FLOOR-14",
+  "customers": 500,
+  "won": 1,
+  "lost": 499,
+  "unexpected": 0,
+  "unexpectedByStatus": {
+    "unexpected_responses{status:500}": 0,
+    "unexpected_responses{status:0}": 0,
+    "unexpected_responses{status:503}": 0,
+    "unexpected_responses{status:502}": 0
+  },
+  "latencyMs": {
+    "p(95)": 699.3910521,
+    "p(99)": 731.90763641,
+    "max": 847.942147,
+    "min": 1.867188,
+    "med": 26.0175925
+  },
+  "thresholdsPassed": true
+}
