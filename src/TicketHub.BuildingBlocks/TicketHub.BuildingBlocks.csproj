@@ -4,6 +4,7 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Aspire.RabbitMQ.Client" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="OpenTelemetry" />
     <PackageReference Include="RabbitMQ.Client" />
   </ItemGroup>
 

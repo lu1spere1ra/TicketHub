@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OpenTelemetry;
 using RabbitMQ.Client;
 
 namespace TicketHub.BuildingBlocks.Messaging;
@@ -93,15 +94,31 @@ internal sealed partial class OutboxRelay<TDbContext>(
             db.ChangeTracker.Clear();
             await using var transaction = await db.Database.BeginTransactionAsync(token);
 
-            var batch = await db.Set<OutboxMessage>()
-                .FromSql($"""
-                    SELECT * FROM "OutboxMessages"
-                    WHERE "SentAt" IS NULL
-                    ORDER BY "Id"
-                    LIMIT {_options.OutboxBatchSize}
-                    FOR UPDATE SKIP LOCKED
-                    """)
-                .ToListAsync(token);
+            List<OutboxMessage> batch;
+            // Polling twice a second would otherwise create a root "postgresql" trace every time, drowning the
+            // traces that matter. The publish spans below are not suppressed.
+            using (SuppressInstrumentationScope.Begin())
+            {
+                batch = await db.Set<OutboxMessage>()
+                    .FromSql($"""
+                        SELECT * FROM "OutboxMessages"
+                        WHERE "SentAt" IS NULL
+                        ORDER BY "Id"
+                        LIMIT {_options.OutboxBatchSize}
+                        FOR UPDATE SKIP LOCKED
+                        """)
+                    .ToListAsync(token);
+            }
+
+            if (batch.Count == 0)
+            {
+                using (SuppressInstrumentationScope.Begin())
+                {
+                    await transaction.CommitAsync(token);
+                }
+
+                return 0;
+            }
 
             foreach (var message in batch)
             {

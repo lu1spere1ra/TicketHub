@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using OpenTelemetry;
 using TicketHub.Booking.Data;
 using TicketHub.Booking.Domain;
 using TicketHub.BuildingBlocks.Messaging;
@@ -67,15 +68,25 @@ public sealed partial class HoldExpiryService(
 
             var held = nameof(ReservationStatus.Held);
             var awaitingPayment = nameof(ReservationStatus.AwaitingPayment);
-            var reservations = await db.Reservations
-                .FromSql($"""
-                    SELECT * FROM "Reservations"
-                    WHERE "Status" IN ({held}, {awaitingPayment}) AND "HoldExpiresAt" <= {now}
-                    ORDER BY "HoldExpiresAt"
-                    LIMIT {options.Value.BatchSize}
-                    FOR UPDATE SKIP LOCKED
-                    """)
-                .ToListAsync(token);
+            List<Reservation> reservations;
+            // The poll itself is not worth a trace every few seconds; the work it finds is.
+            using (SuppressInstrumentationScope.Begin())
+            {
+                reservations = await db.Reservations
+                    .FromSql($"""
+                        SELECT * FROM "Reservations"
+                        WHERE "Status" IN ({held}, {awaitingPayment}) AND "HoldExpiresAt" <= {now}
+                        ORDER BY "HoldExpiresAt"
+                        LIMIT {options.Value.BatchSize}
+                        FOR UPDATE SKIP LOCKED
+                        """)
+                    .ToListAsync(token);
+                if (reservations.Count == 0)
+                {
+                    await transaction.CommitAsync(token);
+                    return 0;
+                }
+            }
 
             foreach (var reservation in reservations)
             {
