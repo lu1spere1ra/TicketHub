@@ -31,6 +31,8 @@ internal sealed partial class MessageConsumerService<TDbContext>(
 {
     private readonly MessagingOptions _options = options.Value;
     private readonly List<IChannel> _channels = [];
+    private readonly Lock _channelsLock = new();
+    private int _stopped;
     private readonly CancellationTokenSource _stopping = new();
 
     /// <summary>
@@ -46,7 +48,10 @@ internal sealed partial class MessageConsumerService<TDbContext>(
             var channel = await connection.CreateChannelAsync(
                 new CreateChannelOptions(publisherConfirmationsEnabled: true, publisherConfirmationTrackingEnabled: true),
                 cancellationToken);
-            _channels.Add(channel);
+            lock (_channelsLock)
+            {
+                _channels.Add(channel);
+            }
 
             var queueName = _options.QueuePrefix + queue.Key;
             await RabbitMqTopology.DeclareConsumerQueueAsync(
@@ -63,14 +68,22 @@ internal sealed partial class MessageConsumerService<TDbContext>(
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        // Idempotent: hosts may call StopAsync more than once during shutdown.
-        if (_stopping.IsCancellationRequested)
+        // Idempotent and safe to race: hosts may call StopAsync more than once, and startup may still be adding
+        // channels while shutdown begins.
+        if (Interlocked.Exchange(ref _stopped, 1) == 1)
         {
             return;
         }
 
         await _stopping.CancelAsync();
-        foreach (var channel in _channels)
+        IChannel[] channels;
+        lock (_channelsLock)
+        {
+            channels = [.. _channels];
+            _channels.Clear();
+        }
+
+        foreach (var channel in channels)
         {
             try
             {
@@ -86,8 +99,6 @@ internal sealed partial class MessageConsumerService<TDbContext>(
 
             channel.Dispose();
         }
-
-        _channels.Clear();
     }
 
     public void Dispose() => _stopping.Dispose();
