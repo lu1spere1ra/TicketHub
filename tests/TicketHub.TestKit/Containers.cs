@@ -66,3 +66,23 @@ public sealed class RedisContainer : IAsyncLifetime
 
     public Task StartAsync() => _container.StartAsync();
 }
+
+/// <summary>SMTP sink with an HTTP API to read what was sent.</summary>
+public sealed class MailpitContainer : IAsyncLifetime
+{
+    public const string Image = "axllent/mailpit:v1.27";
+
+    private readonly DotNet.Testcontainers.Containers.IContainer _container = new DotNet.Testcontainers.Builders.ContainerBuilder(Image)
+        .WithPortBinding(1025, assignRandomHostPort: true)
+        .WithPortBinding(8025, assignRandomHostPort: true)
+        .WithWaitStrategy(DotNet.Testcontainers.Builders.Wait.ForUnixContainer().UntilHttpRequestIsSucceeded(r => r.ForPort(8025).ForPath("/livez")))
+        .Build();
+
+    public string SmtpHost => _container.Hostname;
+    public int SmtpPort => _container.GetMappedPublicPort(1025);
+    public Uri ApiBaseAddress => new($"http://{_container.Hostname}:{_container.GetMappedPublicPort(8025)}");
+
+    public async ValueTask InitializeAsync() => await _container.StartAsync();
+
+    public async ValueTask DisposeAsync() => await _container.DisposeAsync();
+}
