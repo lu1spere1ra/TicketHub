@@ -42,6 +42,14 @@ public static class CatalogClientResilience
 
     public static IHttpClientBuilder AddCatalogResilience(this IHttpClientBuilder builder, CatalogClientOptions options)
     {
+        // An HTTP/2 connection carries at most 100 concurrent streams (Kestrel's default). Without extra connections,
+        // call 101 onwards queues inside the client during a sale burst and burns its timeout before it is even sent.
+        builder.ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+        {
+            EnableMultipleHttp2Connections = true,
+            PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
+        });
+
         builder.ConfigureChannel(channel => channel.ServiceConfig = new ServiceConfig
         {
             MethodConfigs =
