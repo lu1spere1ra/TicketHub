@@ -1,6 +1,6 @@
 # TicketHub — Implementation Plan
 
-> **Status:** Approved, with one instruction: *no more technology than necessary; keep it clean, no over-engineering.* Revision 1 below applies that instruction and overrides anything else in this document.
+> **Status:** Implemented. All six phases are complete; see the README for results. The plan was approved with one instruction: *no more technology than necessary; keep it clean, no over-engineering.* Revision 1 applies that instruction and overrides anything else in this document. "Changes found during implementation" records where the build differs from the plan, and why.
 
 ## Revision 1 — simplifications
 
@@ -14,7 +14,16 @@
 | `sell-out.js` k6 scenario | Not in the brief. Only the same-seat race remains. |
 | Separate `*.Domain`, `*.UnitTests` and `*.IntegrationTests` projects | One project per service, with a `Domain/` folder. One test project per service, with `Domain/` (pure unit tests) and `Integration/` (Testcontainers) folders. One shared `TicketHub.Contracts` project for all messages. |
 
-No application code is written beyond what this plan describes.
+## Changes found during implementation
+
+| Planned | Built | Why |
+|---|---|---|
+| `AddStandardResilienceHandler` (with retries) on the gRPC client | gRPC-native retry policy, plus a Http.Resilience circuit breaker and attempt timeout | An HTTP-level retry cannot replay a gRPC request body, so the retry hung. A test exposed this (ADR-0008). |
+| Cache the seat map, invalidate on change | Cache only the static layout and read status fresh | No invalidation races, and no stale availability (ADR-0009). |
+| One HTTP/2 connection to Catalog | `EnableMultipleHttp2Connections` | The k6 run showed calls queuing behind the 100-stream limit of a single connection. |
+| Trace everything | Polling queries run under `SuppressInstrumentationScope` | Polling produced thousands of root traces a minute. |
+| ADR-0013 (testing strategy) | The README's Testing section | The decision fits in one table; a separate record added nothing. |
+| A generated Keycloak realm file with 500 load-test users | k6 `setup()` creates the users through the admin API | One less generated artefact to keep in sync. |
 
 **Goal:** An event ticketing platform built as .NET 10 microservices with event-driven workflows, which can be shown never to sell the same seat twice.
 
