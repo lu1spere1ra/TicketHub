@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Integration messages exchanged between services. Only plain records live here: no behaviour, no domain types.
+    Events are owned by the service that publishes them, commands by the service that handles them; the folder
+    names reflect that ownership.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="../TicketHub.BuildingBlocks/TicketHub.BuildingBlocks.csproj" />
+  </ItemGroup>
+
+</Project>

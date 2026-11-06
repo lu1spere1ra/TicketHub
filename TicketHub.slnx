@@ -2,10 +2,13 @@
   <Folder Name="/src/">
     <Project Path="src/TicketHub.AppHost/TicketHub.AppHost.csproj" />
     <Project Path="src/TicketHub.BuildingBlocks/TicketHub.BuildingBlocks.csproj" />
+    <Project Path="src/TicketHub.Catalog/TicketHub.Catalog.csproj" />
+    <Project Path="src/TicketHub.Contracts/TicketHub.Contracts.csproj" />
     <Project Path="src/TicketHub.ServiceDefaults/TicketHub.ServiceDefaults.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/TicketHub.BuildingBlocks.Tests/TicketHub.BuildingBlocks.Tests.csproj" />
+    <Project Path="tests/TicketHub.Catalog.Tests/TicketHub.Catalog.Tests.csproj" />
     <Project Path="tests/TicketHub.TestKit/TicketHub.TestKit.csproj" />
   </Folder>
 </Solution>

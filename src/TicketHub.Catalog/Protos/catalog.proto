@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+option csharp_namespace = "TicketHub.Catalog.Grpc";
+
+package tickethub.catalog.v1;
+
+// Answers "can these seats be sold for this event, and at what price?".
+// Whether a seat is free right now is Booking's concern, not Catalog's (see ADR-0001).
+service SeatSellability {
+  rpc CheckSeats (CheckSeatsRequest) returns (CheckSeatsResponse);
+}
+
+message CheckSeatsRequest {
+  string event_id = 1;
+  repeated string seat_ids = 2;
+}
+
+message CheckSeatsResponse {
+  bool event_found = 1;
+  bool event_on_sale = 2;
+  repeated SeatInfo seats = 3;
+}
+
+message SeatInfo {
+  string seat_id = 1;
+  bool exists = 2;
+  // False for seats that exist but cannot be sold (blocked, or no price for their section).
+  bool sellable = 3;
+  // Money in integer minor units (cents) to avoid decimal encoding issues on the wire.
+  int64 price_minor = 4;
+  string currency = 5;
+  string label = 6;
+}
