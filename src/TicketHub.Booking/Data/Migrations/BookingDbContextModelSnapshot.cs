@@ -29,6 +29,10 @@ namespace TicketHub.Booking.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -47,6 +51,15 @@ namespace TicketHub.Booking.Data.Migrations
 
                     b.Property<DateTimeOffset>("HoldExpiresAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("PaymentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("RefundedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("RefundedPaymentId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -94,6 +107,22 @@ namespace TicketHub.Booking.Data.Migrations
                                 .HasColumnType("jsonb");
                         });
 
+                    b.ComplexCollection(typeof(List<Dictionary<string, object>>), "_timeline", "TicketHub.Booking.Domain.Reservation._timeline#TimelineEntry", b1 =>
+                        {
+                            b1.IsRequired();
+
+                            b1.Property<DateTimeOffset>("At");
+
+                            b1.Property<string>("Detail");
+
+                            b1.Property<string>("Step")
+                                .IsRequired();
+
+                            b1
+                                .ToJson("Timeline")
+                                .HasColumnType("jsonb");
+                        });
+
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerId");
@@ -128,6 +157,50 @@ namespace TicketHub.Booking.Data.Migrations
                     b.HasIndex("ReservationId");
 
                     b.ToTable("SeatAllocations", (string)null);
+                });
+
+            modelBuilder.Entity("TicketHub.Booking.Features.Admin.DeadLetter", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ArchivedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ExceptionMessage")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ExceptionType")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset?>("FailedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("MessageId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("MessageType")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("OriginalQueue")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArchivedAt");
+
+                    b.ToTable("DeadLetters");
                 });
 
             modelBuilder.Entity("TicketHub.BuildingBlocks.Messaging.InboxMessage", b =>

@@ -24,6 +24,12 @@ public static class BookingErrors
 
     public static Error SeatNotHeldByReservation => Error.Conflict("seat-not-held", "The seat is not held by this reservation.");
 
+    public static Error HoldExpired => Error.Gone("hold-expired", "The hold has expired and the seats were released.");
+    public static Error HoldStillActive => Error.Conflict("hold-active", "The hold has not expired yet.");
+
+    public static Error InvalidTransition(ReservationStatus status, string action) =>
+        Error.Conflict("invalid-state", $"A reservation that is {status} cannot {action}.");
+
     public static Error CatalogUnavailable =>
         Error.Unavailable("catalog-unavailable", "Seat availability cannot be checked right now. Please retry shortly.");
 

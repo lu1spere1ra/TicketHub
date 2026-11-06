@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using TicketHub.Booking.Domain;
+using TicketHub.Booking.Features.Admin;
 using TicketHub.BuildingBlocks.Messaging;
 
 namespace TicketHub.Booking.Data;
@@ -11,6 +12,7 @@ public sealed class BookingDbContext(DbContextOptions<BookingDbContext> options)
 
     public DbSet<Reservation> Reservations => Set<Reservation>();
     public DbSet<SeatAllocation> SeatAllocations => Set<SeatAllocation>();
+    public DbSet<DeadLetter> DeadLetters => Set<DeadLetter>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -37,8 +39,20 @@ public sealed class BookingDbContext(DbContextOptions<BookingDbContext> options)
                 seats.ToJson("Seats");
                 seats.ComplexProperty(s => s.Price);
             });
+            reservation.ComplexCollection<List<TimelineEntry>, TimelineEntry>("_timeline", timeline => timeline.ToJson("Timeline"));
+            reservation.Ignore(r => r.Timeline);
+            reservation.Property(r => r.CancellationReason).HasMaxLength(200);
             reservation.HasIndex(r => new { r.Status, r.HoldExpiresAt });
             reservation.HasIndex(r => r.CustomerId);
+        });
+
+        modelBuilder.Entity<DeadLetter>(deadLetter =>
+        {
+            deadLetter.HasKey(d => d.Id);
+            deadLetter.Property(d => d.MessageType).HasMaxLength(200);
+            deadLetter.Property(d => d.OriginalQueue).HasMaxLength(200);
+            deadLetter.Property(d => d.ExceptionType).HasMaxLength(500);
+            deadLetter.HasIndex(d => d.ArchivedAt);
         });
 
         modelBuilder.AddMessagingTables();
