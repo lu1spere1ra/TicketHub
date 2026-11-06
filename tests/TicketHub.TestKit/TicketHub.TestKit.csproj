@@ -5,6 +5,8 @@
     <PackageReference Include="Testcontainers.PostgreSql" />
     <PackageReference Include="Testcontainers.RabbitMq" />
     <PackageReference Include="Testcontainers.Redis" />
+    <PackageReference Include="RabbitMQ.Client" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="xunit.v3.extensibility.core" />
   </ItemGroup>
 

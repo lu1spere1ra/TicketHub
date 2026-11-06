@@ -3,7 +3,7 @@ using System.Text;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
-namespace TicketHub.BuildingBlocks.Tests.Messaging;
+namespace TicketHub.TestKit;
 
 /// <summary>Talks to the broker directly, bypassing the building block, to publish or observe raw messages.</summary>
 public sealed class RawBroker : IAsyncDisposable
@@ -29,6 +29,11 @@ public sealed class RawBroker : IAsyncDisposable
         var properties = new BasicProperties { MessageId = messageId.ToString(), Type = type, ContentType = "application/json" };
         await _channel.BasicPublishAsync(exchange, type, mandatory: false, properties, Encoding.UTF8.GetBytes(body));
     }
+
+    /// <summary>Publishes a message exactly as the outbox relay would (camelCase JSON, type as routing key).</summary>
+    public Task PublishMessageAsync<T>(string exchange, string type, T message, Guid? messageId = null) =>
+        PublishAsync(exchange, type, messageId ?? Guid.CreateVersion7(),
+            System.Text.Json.JsonSerializer.Serialize(message, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web)));
 
     /// <summary>Binds a fresh queue to the exchange and records every message id delivered to it.</summary>
     public async Task<ConcurrentBag<string>> ObserveAsync(string exchange, string routingKey)

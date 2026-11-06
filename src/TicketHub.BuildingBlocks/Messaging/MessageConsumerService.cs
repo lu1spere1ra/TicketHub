@@ -62,16 +62,31 @@ internal sealed partial class MessageConsumerService<TDbContext>(
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
+        // Idempotent: hosts may call StopAsync more than once during shutdown.
+        if (_stopping.IsCancellationRequested)
+        {
+            return;
+        }
+
         await _stopping.CancelAsync();
         foreach (var channel in _channels)
         {
-            if (channel.IsOpen)
+            try
             {
-                await channel.CloseAsync(cancellationToken);
+                if (channel.IsOpen)
+                {
+                    await channel.CloseAsync(cancellationToken);
+                }
+            }
+            catch (Exception ex) when (ex is ObjectDisposedException or OperationCanceledException)
+            {
+                // The connection is already going away; nothing left to close.
             }
 
             channel.Dispose();
         }
+
+        _channels.Clear();
     }
 
     public void Dispose() => _stopping.Dispose();
