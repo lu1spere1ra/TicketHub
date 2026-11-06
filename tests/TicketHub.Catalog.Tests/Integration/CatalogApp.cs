@@ -20,6 +20,7 @@ public sealed class CatalogApp(string database, string rabbitMq) : WebApplicatio
         builder.UseSetting("ConnectionStrings:rabbitmq", rabbitMq);
         builder.UseSetting("Messaging:Exchange", Exchange);
         builder.UseSetting("Messaging:DeadLetterQueue", Exchange + ".dead-letters");
+        builder.UseSetting("Messaging:QueuePrefix", Exchange + ".");
         builder.UseSetting("Messaging:RetryDelay", "00:00:00.200");
         builder.ConfigureLogging(logging => logging.ClearProviders());
     }

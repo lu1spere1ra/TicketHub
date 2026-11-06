@@ -1,4 +1,3 @@
-using System.Text;
 using RabbitMQ.Client;
 
 namespace TicketHub.BuildingBlocks.Messaging;
@@ -43,26 +42,4 @@ internal static class RabbitMqTopology
 
     public static Task DeclareDeadLetterQueueAsync(IChannel channel, MessagingOptions options, CancellationToken ct) =>
         channel.QueueDeclareAsync(options.DeadLetterQueue, durable: true, exclusive: false, autoDelete: false, cancellationToken: ct);
-
-    public static string? ReadString(IDictionary<string, object?>? headers, string key) =>
-        headers is not null && headers.TryGetValue(key, out var value)
-            ? value switch
-            {
-                byte[] bytes => Encoding.UTF8.GetString(bytes),
-                string text => text,
-                null => null,
-                _ => value.ToString(),
-            }
-            : null;
-
-    public static int? ReadInt(IDictionary<string, object?>? headers, string key) =>
-        headers is not null && headers.TryGetValue(key, out var value)
-            ? value switch
-            {
-                int i => i,
-                long l => (int)l,
-                byte[] bytes when int.TryParse(Encoding.UTF8.GetString(bytes), out var parsed) => parsed,
-                _ => null,
-            }
-            : null;
 }

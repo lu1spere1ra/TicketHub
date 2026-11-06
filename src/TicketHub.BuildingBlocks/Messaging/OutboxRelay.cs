@@ -69,7 +69,8 @@ internal sealed partial class OutboxRelay<TDbContext>(
             {
                 try
                 {
-                    await Task.Delay(_options.OutboxPollInterval, timeProvider, stoppingToken);
+                    // Real time on purpose: polling cadence is infrastructure, while TimeProvider is business time (tests freeze it).
+                    await Task.Delay(_options.OutboxPollInterval, stoppingToken);
                 }
                 catch (OperationCanceledException)
                 {

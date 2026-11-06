@@ -48,13 +48,14 @@ internal sealed partial class MessageConsumerService<TDbContext>(
                 cancellationToken);
             _channels.Add(channel);
 
+            var queueName = _options.QueuePrefix + queue.Key;
             await RabbitMqTopology.DeclareConsumerQueueAsync(
-                channel, _options, queue.Key, queue.Select(b => b.MessageTypeName), cancellationToken);
+                channel, _options, queueName, queue.Select(b => b.MessageTypeName), cancellationToken);
             await channel.BasicQosAsync(prefetchSize: 0, prefetchCount: _options.PrefetchCount, global: false, cancellationToken);
 
             var consumer = new AsyncEventingBasicConsumer(channel);
-            var queueName = queue.Key;
-            consumer.ReceivedAsync += (_, delivery) => OnReceivedAsync(channel, queueName, delivery, _stopping.Token);
+            var logicalQueue = queue.Key;
+            consumer.ReceivedAsync += (_, delivery) => OnReceivedAsync(channel, logicalQueue, queueName, delivery, _stopping.Token);
             await channel.BasicConsumeAsync(queueName, autoAck: false, consumer, cancellationToken);
             LogConsuming(queueName);
         }
@@ -91,19 +92,21 @@ internal sealed partial class MessageConsumerService<TDbContext>(
 
     public void Dispose() => _stopping.Dispose();
 
-    private async Task OnReceivedAsync(IChannel channel, string queue, BasicDeliverEventArgs delivery, CancellationToken ct)
+    /// <param name="queue">Logical queue name: identifies the handler and the inbox consumer.</param>
+    /// <param name="physicalQueue">Broker queue name (logical name plus <see cref="MessagingOptions.QueuePrefix"/>).</param>
+    private async Task OnReceivedAsync(IChannel channel, string queue, string physicalQueue, BasicDeliverEventArgs delivery, CancellationToken ct)
     {
         var properties = delivery.BasicProperties;
-        var attempt = RabbitMqTopology.ReadInt(properties.Headers, MessageHeaders.Attempt) ?? 1;
+        var attempt = MessageHeaders.ReadInt(properties.Headers, MessageHeaders.Attempt) ?? 1;
         var typeName = properties.Type ?? "unknown";
 
         ActivityContext.TryParse(
-            RabbitMqTopology.ReadString(properties.Headers, MessageHeaders.TraceParent),
-            RabbitMqTopology.ReadString(properties.Headers, MessageHeaders.TraceState),
+            MessageHeaders.ReadString(properties.Headers, MessageHeaders.TraceParent),
+            MessageHeaders.ReadString(properties.Headers, MessageHeaders.TraceState),
             out var parent);
         using var activity = MessagingTelemetry.ActivitySource.StartActivity($"{typeName} process", ActivityKind.Consumer, parent);
         activity?.SetTag("messaging.system", "rabbitmq");
-        activity?.SetTag("messaging.destination.name", queue);
+        activity?.SetTag("messaging.destination.name", physicalQueue);
         activity?.SetTag("messaging.message.id", properties.MessageId);
         activity?.SetTag("messaging.attempt", attempt);
 
@@ -119,7 +122,7 @@ internal sealed partial class MessageConsumerService<TDbContext>(
             catch (PoisonMessageException ex)
             {
                 // Retrying cannot fix a message we cannot even read.
-                await DeadLetterAsync(channel, queue, delivery, attempt, ex, ct);
+                await DeadLetterAsync(channel, physicalQueue, delivery, attempt, ex, ct);
             }
             catch (Exception ex) when (!ct.IsCancellationRequested)
             {
@@ -127,11 +130,11 @@ internal sealed partial class MessageConsumerService<TDbContext>(
                 if (attempt < _options.MaxAttempts)
                 {
                     LogRetrying(ex, typeName, attempt, _options.MaxAttempts);
-                    await RetryAsync(channel, queue, delivery, attempt, ct);
+                    await RetryAsync(channel, physicalQueue, delivery, attempt, ct);
                 }
                 else
                 {
-                    await DeadLetterAsync(channel, queue, delivery, attempt, ex, ct);
+                    await DeadLetterAsync(channel, physicalQueue, delivery, attempt, ex, ct);
                 }
             }
 

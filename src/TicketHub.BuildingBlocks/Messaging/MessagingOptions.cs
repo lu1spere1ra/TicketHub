@@ -10,6 +10,12 @@ public sealed class MessagingOptions
     /// <summary>Single queue collecting messages that exhausted their retries, from every service.</summary>
     public string DeadLetterQueue { get; set; } = "tickethub.dead-letters";
 
+    /// <summary>
+    /// Prepended to every consumer queue name. Empty in real deployments; tests set it so several hosts can share
+    /// one broker without consuming each other's messages.
+    /// </summary>
+    public string QueuePrefix { get; set; } = string.Empty;
+
     public TimeSpan OutboxPollInterval { get; set; } = TimeSpan.FromMilliseconds(500);
     public int OutboxBatchSize { get; set; } = 100;
     public TimeSpan OutboxRetention { get; set; } = TimeSpan.FromHours(24);
