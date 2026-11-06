@@ -15,4 +15,6 @@ Each ADR records one decision that a reviewer could reasonably question. They us
 | [0003](0003-transactional-outbox-and-idempotent-consumers.md) | Transactional outbox and idempotent consumers | Accepted |
 | [0004](0004-preventing-overbooking.md) | Preventing overbooking with optimistic concurrency | Accepted |
 | [0005](0005-seat-availability-sync-check-async-projection.md) | Seat availability: sync sellability check + async projection | Accepted |
+| [0006](0006-checkout-saga-orchestration.md) | Checkout saga orchestrated by Booking | Accepted |
+| [0007](0007-retry-and-dead-letter-topology.md) | Message retries and dead-lettering | Accepted |
 | [0012](0012-code-organisation.md) | Code organisation: one project per service, vertical slices | Accepted |
