@@ -17,4 +17,7 @@ Each ADR records one decision that a reviewer could reasonably question. They us
 | [0005](0005-seat-availability-sync-check-async-projection.md) | Seat availability: sync sellability check + async projection | Accepted |
 | [0006](0006-checkout-saga-orchestration.md) | Checkout saga orchestrated by Booking | Accepted |
 | [0007](0007-retry-and-dead-letter-topology.md) | Message retries and dead-lettering | Accepted |
+| [0008](0008-resilience-policies.md) | Resilience policies | Accepted |
+| [0009](0009-catalog-caching.md) | Catalog caching: cache what is static, read what is live | Accepted |
+| [0011](0011-distributed-tracing-through-outbox.md) | Distributed tracing across the outbox and the broker | Accepted |
 | [0012](0012-code-organisation.md) | Code organisation: one project per service, vertical slices | Accepted |
