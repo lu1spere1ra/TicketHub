@@ -27,11 +27,13 @@ public sealed class PaymentSucceededHandler(BookingDbContext db, IOutbox outbox,
                 outbox.Enqueue(new ReservationConfirmed(
                     reservation.Id, reservation.EventId, reservation.CustomerEmail, reservation.Seats.Select(s => s.Label).ToList(),
                     reservation.Total.Amount, reservation.Total.Currency, now), reservation.Id);
+                BookingMetrics.Confirmed.Add(1);
                 break;
 
             case PaymentSucceededOutcome.RefundRequired:
                 // Compensation: the customer paid for seats that were already released.
                 outbox.Enqueue(new RefundPayment(message.PaymentId, reservation.Id, $"Reservation was {reservation.Status} when payment succeeded"), reservation.Id);
+                BookingMetrics.RefundsRequested.Add(1);
                 break;
 
             case PaymentSucceededOutcome.Duplicate:
@@ -54,6 +56,7 @@ public sealed class PaymentFailedHandler(BookingDbContext db, IOutbox outbox, Ti
         {
             await ReservationSeats.ReleaseAsync(db, outbox, reservation, cancellationToken);
             outbox.Enqueue(new ReservationCancelled(reservation.Id, reservation.EventId, reservation.CustomerEmail, message.Reason, now), reservation.Id);
+            BookingMetrics.Cancelled.Add(1);
         }
     }
 }

@@ -70,6 +70,7 @@ public sealed class HoldSeatsHandler(
             }
             catch (DbUpdateConcurrencyException)
             {
+                BookingMetrics.HoldConflicts.Add(1);
                 return BookingErrors.SeatsUnavailable(command.SeatIds);
             }
         }
@@ -86,6 +87,7 @@ public sealed class HoldSeatsHandler(
         var unavailable = allocations.Where(a => !a.Hold(reservationId).IsSuccess).Select(a => a.SeatId).ToList();
         if (unavailable.Count > 0)
         {
+            BookingMetrics.HoldConflicts.Add(1);
             return BookingErrors.SeatsUnavailable(unavailable);
         }
 
@@ -104,6 +106,7 @@ public sealed class HoldSeatsHandler(
         // EF orders the UPDATEs by primary key, so two overlapping holds always lock seats in the same order and
         // cannot deadlock: the second one waits, then finds the version changed.
         await db.SaveChangesAsync(ct);
+        BookingMetrics.HoldsSucceeded.Add(1);
         return ReservationResponse.From(reservation.Value);
     }
 

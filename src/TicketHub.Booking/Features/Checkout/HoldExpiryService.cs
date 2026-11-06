@@ -83,6 +83,7 @@ public sealed partial class HoldExpiryService(
                 {
                     await ReservationSeats.ReleaseAsync(db, outbox, reservation, token);
                     outbox.Enqueue(new ReservationExpired(reservation.Id, reservation.EventId, reservation.CustomerEmail, now), reservation.Id);
+                    BookingMetrics.Expired.Add(1);
                 }
             }
 
