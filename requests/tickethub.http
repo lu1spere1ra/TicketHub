@@ -1,25 +1,46 @@
-# Manual calls against the gateway (Aspire: 5200, docker-compose: 5250).
+# Manual calls against the gateway. Aspire: gateway 5200, Keycloak 5220. docker-compose: 5250 / 5260.
 @gateway = http://localhost:5200
+@keycloak = http://localhost:5220
 @jazzNight = 0197a000-0000-7000-8000-000000000001
 
-### List events
+### Log in as alice (customer). Use "ops" for the admin endpoints. Password: "password".
+# @name login
+POST {{keycloak}}/realms/tickethub/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=tickethub-cli&username=alice&password=password
+
+###
+@token = {{login.response.body.access_token}}
+
+### List events (public)
 GET {{gateway}}/catalog/events
 
-### Seat map (copy a seatId from here)
+### Seat map (public); copy a seatId from here
 GET {{gateway}}/catalog/events/{{jazzNight}}/seat-map
 
 ### Hold seats
+# @name hold
 POST {{gateway}}/booking/reservations
+Authorization: Bearer {{token}}
 Content-Type: application/json
-X-User-Id: alice
-X-User-Email: alice@example.com
 
 {
   "eventId": "{{jazzNight}}",
   "seatIds": ["<seat-id>"]
 }
 
-### Get a reservation
-GET {{gateway}}/booking/reservations/<reservation-id>
-X-User-Id: alice
-X-User-Email: alice@example.com
+### Pay: test-card-approve | test-card-decline | test-card-flaky (anything else: random outcome)
+POST {{gateway}}/booking/reservations/{{hold.response.body.id}}/checkout
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "paymentToken": "test-card-approve" }
+
+### Reservation status
+GET {{gateway}}/booking/reservations/{{hold.response.body.id}}
+Authorization: Bearer {{token}}
+
+### Admin: saga state and dead letters (needs a token for "ops")
+GET {{gateway}}/admin/sagas?status=AwaitingPayment
+Authorization: Bearer <ops token>
