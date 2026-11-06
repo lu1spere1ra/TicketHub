@@ -9,14 +9,14 @@ using TicketHub.TestKit;
 
 namespace TicketHub.Catalog.Tests.Integration;
 
-public sealed class CatalogApiTests(PostgresContainer postgres, RabbitMqContainer rabbitMq) : IAsyncLifetime
+public sealed class CatalogApiTests(PostgresContainer postgres, RabbitMqContainer rabbitMq, RedisContainer redis) : IAsyncLifetime
 {
     private CatalogApp _app = null!;
     private HttpClient _client = null!;
 
     public async ValueTask InitializeAsync()
     {
-        _app = new CatalogApp(await postgres.CreateDatabaseAsync(), rabbitMq.ConnectionString);
+        _app = new CatalogApp(await postgres.CreateDatabaseAsync(), rabbitMq.ConnectionString, redis.ConnectionString);
         _client = _app.CreateClient();
     }
 

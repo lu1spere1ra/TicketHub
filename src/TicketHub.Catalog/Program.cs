@@ -14,6 +14,8 @@ builder.AddNpgsqlDbContext<CatalogDbContext>("catalogdb");
 builder.AddTicketHubMessaging<CatalogDbContext>(messaging => messaging
     .Consumes<SeatAvailabilityChanged, SeatAvailabilityChangedHandler>("catalog.booking-events"));
 
+builder.AddRedisDistributedCache("redis");
+builder.Services.AddHybridCache();
 builder.Services.AddScoped<EventQueries>();
 builder.Services.AddGrpc();
 builder.Services.AddProblemDetails();

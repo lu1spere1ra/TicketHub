@@ -7,7 +7,7 @@ using TicketHub.TestKit;
 
 namespace TicketHub.Catalog.Tests.Integration;
 
-public sealed class SeatMapProjectionTests(PostgresContainer postgres, RabbitMqContainer rabbitMq) : IAsyncLifetime
+public sealed class SeatMapProjectionTests(PostgresContainer postgres, RabbitMqContainer rabbitMq, RedisContainer redis) : IAsyncLifetime
 {
     private static readonly string MessageType = MessageTypeAttribute.NameOf<SeatAvailabilityChanged>();
     private CatalogApp _app = null!;
@@ -16,7 +16,7 @@ public sealed class SeatMapProjectionTests(PostgresContainer postgres, RabbitMqC
 
     public async ValueTask InitializeAsync()
     {
-        _app = new CatalogApp(await postgres.CreateDatabaseAsync(), rabbitMq.ConnectionString);
+        _app = new CatalogApp(await postgres.CreateDatabaseAsync(), rabbitMq.ConnectionString, redis.ConnectionString);
         _client = _app.CreateClient();
         _broker = await RawBroker.ConnectAsync(rabbitMq.ConnectionString);
     }

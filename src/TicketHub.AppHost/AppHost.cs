@@ -13,6 +13,9 @@ var rabbitMq = builder.AddRabbitMQ("rabbitmq", port: 5223)
     .WithManagementPlugin(port: 5222)
     .WithImage("library/rabbitmq", "4-management-alpine");
 
+var redis = builder.AddRedis("redis", port: 5225)
+    .WithImage("library/redis", "8-alpine");
+
 var mailpit = builder.AddContainer("mailpit", "axllent/mailpit", "v1.27")
     .WithHttpEndpoint(port: 5221, targetPort: 8025, name: "http")
     .WithEndpoint(targetPort: 1025, name: "smtp", scheme: "tcp");
@@ -23,6 +26,7 @@ var catalog = builder.AddProject<Projects.TicketHub_Catalog>("catalog")
     .WithEndpoint("grpc", endpoint => endpoint.Port = 5211)
     .WithReference(catalogDb).WaitFor(catalogDb)
     .WithReference(rabbitMq).WaitFor(rabbitMq)
+    .WithReference(redis).WaitFor(redis)
     .WithHttpHealthCheck("/health/ready");
 
 var booking = builder.AddProject<Projects.TicketHub_Booking>("booking")
