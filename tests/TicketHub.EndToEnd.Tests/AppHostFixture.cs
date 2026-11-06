@@ -13,7 +13,7 @@ namespace TicketHub.EndToEnd.Tests;
 /// </summary>
 public sealed class AppHostFixture : IAsyncLifetime
 {
-    private static readonly TimeSpan StartupTimeout = TimeSpan.FromMinutes(4);
+    private static readonly TimeSpan StartupTimeout = TimeSpan.FromMinutes(6);
     private DistributedApplication? _app;
 
     public DistributedApplication App => _app ?? throw new InvalidOperationException("AppHost not started.");
@@ -35,9 +35,18 @@ public sealed class AppHostFixture : IAsyncLifetime
         _app = await builder.BuildAsync(cts.Token);
         await _app.StartAsync(cts.Token);
         await _app.ResourceNotifications.WaitForResourceHealthyAsync("gateway", cts.Token);
+        Keycloak = new Keycloak(_app.CreateHttpClient("keycloak", "http"));
     }
 
+    public Keycloak Keycloak { get; private set; } = null!;
+
     public HttpClient CreateGatewayClient() => App.CreateHttpClient("gateway");
+
+    public async Task<(Api Api, string Email)> NewCustomerAsync()
+    {
+        var (token, email) = await Keycloak.NewCustomerAsync();
+        return (Api.WithToken(CreateGatewayClient(), token), email);
+    }
 
     public HttpClient CreateMailpitClient() => App.CreateHttpClient("mailpit", "http");
 

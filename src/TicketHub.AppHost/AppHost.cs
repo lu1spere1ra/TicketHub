@@ -20,6 +20,19 @@ var mailpit = builder.AddContainer("mailpit", "axllent/mailpit", "v1.27")
     .WithHttpEndpoint(port: 5221, targetPort: 8025, name: "http")
     .WithEndpoint(targetPort: 1025, name: "smtp", scheme: "tcp");
 
+// Keycloak is a plain container (the Aspire hosting package is preview-only) importing the realm used by every
+// environment. Image from docker.io rather than quay.io; see docs/PLAN.md §9.
+var keycloak = builder.AddContainer("keycloak", "keycloak/keycloak", "26.4")
+    .WithArgs("start-dev", "--import-realm")
+    .WithBindMount("../../deploy/keycloak", "/opt/keycloak/data/import", isReadOnly: true)
+    .WithEnvironment("KC_BOOTSTRAP_ADMIN_USERNAME", "admin")
+    .WithEnvironment("KC_BOOTSTRAP_ADMIN_PASSWORD", "admin")
+    .WithEnvironment("KC_HEALTH_ENABLED", "true")
+    .WithHttpEndpoint(port: 5220, targetPort: 8080, name: "http")
+    .WithHttpEndpoint(targetPort: 9000, name: "management")
+    .WithHttpHealthCheck("/health/ready", endpointName: "management");
+var realmUrl = ReferenceExpression.Create($"{keycloak.GetEndpoint("http")}/realms/tickethub");
+
 // Catalog declares two Kestrel endpoints in appsettings.json: "http" (REST, HTTP/1.1) and "grpc" (cleartext HTTP/2).
 var catalog = builder.AddProject<Projects.TicketHub_Catalog>("catalog")
     .WithEndpoint("http", endpoint => endpoint.Port = 5210)
@@ -27,12 +40,14 @@ var catalog = builder.AddProject<Projects.TicketHub_Catalog>("catalog")
     .WithReference(catalogDb).WaitFor(catalogDb)
     .WithReference(rabbitMq).WaitFor(rabbitMq)
     .WithReference(redis).WaitFor(redis)
+    .WithEnvironment("Auth__Authority", realmUrl).WaitFor(keycloak)
     .WithHttpHealthCheck("/health/ready");
 
 var booking = builder.AddProject<Projects.TicketHub_Booking>("booking")
     .WithReference(bookingDb).WaitFor(bookingDb)
     .WithReference(rabbitMq).WaitFor(rabbitMq)
     .WithReference(catalog).WaitFor(catalog)
+    .WithEnvironment("Auth__Authority", realmUrl).WaitFor(keycloak)
     .WithEnvironment("Booking__Holds__Duration", builder.Configuration["Booking:Holds:Duration"] ?? "00:10:00")
     .WithEnvironment("Booking__Expiry__PollInterval", builder.Configuration["Booking:Expiry:PollInterval"] ?? "00:00:05")
     .WithHttpHealthCheck("/health/ready");
@@ -56,6 +71,7 @@ builder.AddProject<Projects.TicketHub_Notifications>("notifications")
 builder.AddProject<Projects.TicketHub_Gateway>("gateway")
     .WithReference(catalog).WaitFor(catalog)
     .WithReference(booking).WaitFor(booking)
+    .WithEnvironment("Auth__Authority", realmUrl).WaitFor(keycloak)
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health/ready");
 

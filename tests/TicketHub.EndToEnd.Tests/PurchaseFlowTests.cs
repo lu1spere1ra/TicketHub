@@ -13,7 +13,7 @@ public sealed class PurchaseFlowTests(AppHostFixture system)
     [Fact]
     public async Task Customer_completes_purchase_and_receives_confirmation_email()
     {
-        var (api, email) = NewCustomer();
+        var (api, email) = await system.NewCustomerAsync();
         var seats = await api.FreeSeatsAsync(Api.JazzNight, 2);
         var reservation = await HoldAsync(api, seats);
 
@@ -33,7 +33,7 @@ public sealed class PurchaseFlowTests(AppHostFixture system)
     [Fact]
     public async Task Declined_payment_releases_seats_and_notifies_customer()
     {
-        var (api, email) = NewCustomer();
+        var (api, email) = await system.NewCustomerAsync();
         var seat = (await api.FreeSeatsAsync(Api.JazzNight, 1))[0];
         var reservation = await HoldAsync(api, [seat]);
 
@@ -47,7 +47,7 @@ public sealed class PurchaseFlowTests(AppHostFixture system)
     [Fact]
     public async Task Unpaid_hold_expires_and_seats_become_available()
     {
-        var (api, email) = NewCustomer();
+        var (api, email) = await system.NewCustomerAsync();
         var seat = (await api.FreeSeatsAsync(Api.JazzNight, 1))[0];
         var reservation = await HoldAsync(api, [seat]);
 
@@ -55,12 +55,6 @@ public sealed class PurchaseFlowTests(AppHostFixture system)
         await Eventually.AssertAsync(async () => (await api.GetReservationAsync(reservation.Id)).Status.ShouldBe("Expired"), SagaTimeout);
         await Eventually.AssertAsync(async () => (await api.SeatStatusAsync(Api.JazzNight, seat)).ShouldBe("Available"), SagaTimeout);
         await Eventually.AssertAsync(async () => (await SubjectsSentToAsync(email)).ShouldContain("Your seat reservation expired"), SagaTimeout);
-    }
-
-    private (Api Api, string Email) NewCustomer()
-    {
-        var userId = "e2e-" + Guid.NewGuid().ToString("N")[..8];
-        return (Api.ForCustomer(system.CreateGatewayClient(), userId), $"{userId}@example.com");
     }
 
     private static async Task<Api.Reservation> HoldAsync(Api api, Guid[] seats)

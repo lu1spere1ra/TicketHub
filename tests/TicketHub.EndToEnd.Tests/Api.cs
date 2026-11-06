@@ -7,12 +7,13 @@ public sealed class Api(HttpClient http)
 {
     public static readonly Guid JazzNight = Guid.Parse("0197a000-0000-7000-8000-000000000001");
 
-    public static Api ForCustomer(HttpClient http, string userId)
+    public static Api WithToken(HttpClient http, string accessToken)
     {
-        http.DefaultRequestHeaders.Add("X-User-Id", userId);
-        http.DefaultRequestHeaders.Add("X-User-Email", $"{userId}@example.com");
+        http.DefaultRequestHeaders.Authorization = new("Bearer", accessToken);
         return new Api(http);
     }
+
+    public HttpClient Http => http;
 
     public async Task<IReadOnlyList<Seat>> SeatsAsync(Guid eventId)
     {

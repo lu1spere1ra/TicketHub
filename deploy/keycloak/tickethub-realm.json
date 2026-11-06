@@ -12,12 +12,19 @@
       {
         "name": "admin",
         "description": "Can inspect sagas and dead letters"
+      },
+      {
+        "name": "default-roles-tickethub",
+        "description": "Roles every new user gets: new sign-ups are customers.",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "customer"
+          ]
+        }
       }
     ]
   },
-  "defaultRoles": [
-    "customer"
-  ],
   "clients": [
     {
       "clientId": "tickethub-api",
@@ -68,7 +75,6 @@
         }
       ],
       "realmRoles": [
-        "customer",
         "default-roles-tickethub"
       ]
     },
@@ -87,7 +93,6 @@
         }
       ],
       "realmRoles": [
-        "customer",
         "default-roles-tickethub"
       ]
     },
@@ -110,5 +115,8 @@
         "default-roles-tickethub"
       ]
     }
-  ]
+  ],
+  "defaultRole": {
+    "name": "default-roles-tickethub"
+  }
 }
