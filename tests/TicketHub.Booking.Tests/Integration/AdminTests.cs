@@ -26,7 +26,7 @@ public sealed class AdminTests(PostgresContainer postgres, RabbitMqContainer rab
         var held = await _app.HoldOneAsync("a");
         var paying = await _app.CheckOutAsync((await _app.HoldOneAsync("b")).Id, "b");
 
-        var page = await _app.CreateClient().GetFromJsonAsync<PagedResponse<SagaSummary>>("/admin/sagas?status=AwaitingPayment", Ct);
+        var page = await _app.CreateAdmin().GetFromJsonAsync<PagedResponse<SagaSummary>>("/admin/sagas?status=AwaitingPayment", Ct);
 
         page!.Items.Select(s => s.ReservationId).ShouldBe([paying.Id]);
         page.Items[0].LastStep.ShouldBe("PaymentRequested");
@@ -38,10 +38,17 @@ public sealed class AdminTests(PostgresContainer postgres, RabbitMqContainer rab
     {
         var reservation = await _app.CheckOutAsync((await _app.HoldOneAsync()).Id);
 
-        var details = await _app.CreateClient().GetFromJsonAsync<SagaDetails>($"/admin/sagas/{reservation.Id}", Ct);
+        var details = await _app.CreateAdmin().GetFromJsonAsync<SagaDetails>($"/admin/sagas/{reservation.Id}", Ct);
 
         details!.Timeline.Select(t => t.Step).ShouldBe(["Held", "PaymentRequested"]);
         details.Seats.Count.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task Admin_endpoints_reject_customers_and_anonymous_callers()
+    {
+        (await _app.CreateCustomer("alice").GetAsync("/admin/sagas", Ct)).StatusCode.ShouldBe(System.Net.HttpStatusCode.Forbidden);
+        (await _app.CreateClient().GetAsync("/admin/dead-letters", Ct)).StatusCode.ShouldBe(System.Net.HttpStatusCode.Unauthorized);
     }
 
     [Fact]
@@ -54,7 +61,7 @@ public sealed class AdminTests(PostgresContainer postgres, RabbitMqContainer rab
 
         await Eventually.AssertAsync(async () =>
         {
-            var page = await _app.CreateClient().GetFromJsonAsync<PagedResponse<DeadLetterResponse>>("/admin/dead-letters", Ct);
+            var page = await _app.CreateAdmin().GetFromJsonAsync<PagedResponse<DeadLetterResponse>>("/admin/dead-letters", Ct);
             var deadLetter = page!.Items.ShouldHaveSingleItem();
             deadLetter.OriginalQueue.ShouldBe(_app.Exchange + ".booking.payment-events");
             deadLetter.MessageType.ShouldBe(MessageTypeAttribute.NameOf<PaymentSucceeded>());

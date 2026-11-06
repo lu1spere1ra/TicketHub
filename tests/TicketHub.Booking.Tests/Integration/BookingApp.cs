@@ -8,6 +8,7 @@ using Microsoft.Extensions.Time.Testing;
 using TicketHub.Booking.Catalog;
 using TicketHub.Booking.Data;
 using TicketHub.Booking.Features.Reservations;
+using TicketHub.TestKit;
 
 namespace TicketHub.Booking.Tests.Integration;
 
@@ -42,6 +43,7 @@ public sealed class BookingApp(string database, string rabbitMq, string? realCat
 
         builder.ConfigureTestServices(services =>
         {
+            services.UseTestJwtValidation();
             if (realCatalogAddress is null)
             {
                 services.AddSingleton<ICatalogSeatChecker>(Catalog);
@@ -51,13 +53,9 @@ public sealed class BookingApp(string database, string rabbitMq, string? realCat
         });
     }
 
-    public HttpClient CreateCustomer(string userId)
-    {
-        var client = CreateClient();
-        client.DefaultRequestHeaders.Add("X-User-Id", userId);
-        client.DefaultRequestHeaders.Add("X-User-Email", $"{userId}@example.com");
-        return client;
-    }
+    public HttpClient CreateCustomer(string userId) => CreateClient().WithBearer(TestJwt.Customer(userId));
+
+    public HttpClient CreateAdmin() => CreateClient().WithBearer(TestJwt.Admin());
 
     public static Task<HttpResponseMessage> HoldAsync(HttpClient client, Guid eventId, params Guid[] seatIds) =>
         client.PostAsJsonAsync("/reservations", new HoldSeatsRequest(eventId, seatIds));

@@ -9,6 +9,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="../../src/TicketHub.Gateway/TicketHub.Gateway.csproj" />
+    <ProjectReference Include="../TicketHub.TestKit/TicketHub.TestKit.csproj" />
   </ItemGroup>
 
   <ItemGroup>

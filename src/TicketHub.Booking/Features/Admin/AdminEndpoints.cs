@@ -24,7 +24,7 @@ public static class AdminEndpoints
 
     public static IEndpointRouteBuilder MapAdminEndpoints(this IEndpointRouteBuilder app)
     {
-        var admin = app.MapGroup("/admin").WithTags("Admin");
+        var admin = app.MapGroup("/admin").WithTags("Admin").RequireAuthorization(AuthenticationExtensions.AdminPolicy);
 
         admin.MapGet("/sagas", async Task<Results<Ok<PagedResponse<SagaSummary>>, BadRequest<string>>> (
             BookingDbContext db, CancellationToken ct, string? status = null, int page = 1, int pageSize = 50) =>

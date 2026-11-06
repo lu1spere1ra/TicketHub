@@ -13,7 +13,7 @@ public static class ReservationEndpoints
 {
     public static IEndpointRouteBuilder MapReservationEndpoints(this IEndpointRouteBuilder app)
     {
-        var reservations = app.MapGroup("/reservations").WithTags("Reservations").AddEndpointFilter<RequireCustomerFilter>();
+        var reservations = app.MapGroup("/reservations").WithTags("Reservations").RequireAuthorization(AuthenticationExtensions.CustomerPolicy);
 
         reservations.MapPost("/", async Task<IResult> (
                 HoldSeatsRequest request, HoldSeatsHandler handler, ICurrentUser user, HttpContext http, CancellationToken ct) =>

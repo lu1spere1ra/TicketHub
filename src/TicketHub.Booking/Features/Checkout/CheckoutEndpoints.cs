@@ -20,7 +20,7 @@ public static class CheckoutEndpoints
             })
             .WithTags("Reservations")
             .WithName("Checkout")
-            .AddEndpointFilter<RequireCustomerFilter>();
+            .RequireAuthorization(AuthenticationExtensions.CustomerPolicy);
 
         return app;
     }

@@ -9,6 +9,7 @@ using TicketHub.Contracts.Booking;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+builder.AddTicketHubAuthentication();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.AddNpgsqlDbContext<CatalogDbContext>("catalogdb");
 builder.AddTicketHubMessaging<CatalogDbContext>(messaging => messaging
@@ -24,6 +25,8 @@ builder.Services.AddOpenApi();
 var app = builder.Build();
 
 app.UseExceptionHandler();
+app.UseAuthentication();
+app.UseAuthorization();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -31,7 +34,8 @@ if (app.Environment.IsDevelopment())
 
 app.MapDefaultEndpoints();
 app.MapEventEndpoints();
-app.MapGrpcService<SeatSellabilityService>();
+// Browsing the catalog is public; the gRPC API is for Booking, which calls it with the customer's token.
+app.MapGrpcService<SeatSellabilityService>().RequireAuthorization();
 
 await app.MigrateDatabaseAsync<CatalogDbContext>(DevelopmentSeed.SeedAsync);
 await app.RunAsync();

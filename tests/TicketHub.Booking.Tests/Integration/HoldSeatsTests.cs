@@ -171,7 +171,24 @@ public sealed class HoldSeatsTests(PostgresContainer postgres, RabbitMqContainer
     }
 
     [Fact]
-    public async Task Request_without_customer_identity_returns_401()
+    public async Task Token_for_another_audience_is_rejected()
+    {
+        var (eventId, seats) = _app.Catalog.AddEvent();
+        var client = _app.CreateClient().WithBearer(TestJwt.Issue("alice", ["customer"], audience: "some-other-api"));
+
+        (await BookingApp.HoldAsync(client, eventId, seats[0])).StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Admin_without_customer_role_cannot_hold_seats()
+    {
+        var (eventId, seats) = _app.Catalog.AddEvent();
+
+        (await BookingApp.HoldAsync(_app.CreateAdmin(), eventId, seats[0])).StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Request_without_token_returns_401()
     {
         var (eventId, seats) = _app.Catalog.AddEvent();
 

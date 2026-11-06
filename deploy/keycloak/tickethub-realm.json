@@ -1,0 +1,114 @@
+{
+  "realm": "tickethub",
+  "enabled": true,
+  "sslRequired": "none",
+  "accessTokenLifespan": 900,
+  "roles": {
+    "realm": [
+      {
+        "name": "customer",
+        "description": "Can browse, hold seats and buy tickets"
+      },
+      {
+        "name": "admin",
+        "description": "Can inspect sagas and dead letters"
+      }
+    ]
+  },
+  "defaultRoles": [
+    "customer"
+  ],
+  "clients": [
+    {
+      "clientId": "tickethub-api",
+      "name": "TicketHub API (token audience)",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "secret": "not-used"
+    },
+    {
+      "clientId": "tickethub-cli",
+      "name": "TicketHub test and load-test client",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "description": "Resource-owner password grant for automated tests and k6 only. A browser client would use the authorization code flow with PKCE.",
+      "protocolMappers": [
+        {
+          "name": "tickethub-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "tickethub-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "alice@example.com",
+      "firstName": "Alice",
+      "lastName": "Test",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "customer",
+        "default-roles-tickethub"
+      ]
+    },
+    {
+      "username": "bob",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "bob@example.com",
+      "firstName": "Bob",
+      "lastName": "Test",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "customer",
+        "default-roles-tickethub"
+      ]
+    },
+    {
+      "username": "ops",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "ops@example.com",
+      "firstName": "Ops",
+      "lastName": "Test",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "admin",
+        "default-roles-tickethub"
+      ]
+    }
+  ]
+}

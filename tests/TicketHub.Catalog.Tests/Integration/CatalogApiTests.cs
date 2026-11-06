@@ -102,6 +102,15 @@ public sealed class CatalogApiTests(PostgresContainer postgres, RabbitMqContaine
     }
 
     [Fact]
+    public async Task CheckSeats_requires_an_authenticated_caller()
+    {
+        var call = () => _app.CreateGrpcClient(authenticated: false).CheckSeatsAsync(
+            new CheckSeatsRequest { EventId = DevelopmentSeed.JazzNightId.ToString() }, cancellationToken: TestContext.Current.CancellationToken).ResponseAsync;
+
+        (await Should.ThrowAsync<global::Grpc.Core.RpcException>(call)).StatusCode.ShouldBe(global::Grpc.Core.StatusCode.Unauthenticated);
+    }
+
+    [Fact]
     public async Task CheckSeats_reports_unknown_event()
     {
         var response = await _app.CreateGrpcClient().CheckSeatsAsync(
