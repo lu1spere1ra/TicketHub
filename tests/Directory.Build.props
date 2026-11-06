@@ -1,0 +1,13 @@
+<Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <!-- Test names describe behaviour with underscores; xUnit analyzers already guard test shape. -->
+    <NoWarn>$(NoWarn);CA1707;CA1515;CA2007</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
+    <!-- xUnit v3 test projects are self-hosting executables (Microsoft.Testing.Platform). -->
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+</Project>
