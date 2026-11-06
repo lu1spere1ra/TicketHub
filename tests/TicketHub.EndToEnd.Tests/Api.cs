@@ -30,6 +30,9 @@ public sealed class Api(HttpClient http)
     public Task<HttpResponseMessage> HoldAsync(Guid eventId, params Guid[] seatIds) =>
         http.PostAsJsonAsync("/booking/reservations", new { eventId, seatIds });
 
+    public Task<HttpResponseMessage> CheckoutAsync(Guid reservationId, string paymentToken) =>
+        http.PostAsJsonAsync($"/booking/reservations/{reservationId}/checkout", new { paymentToken });
+
     public async Task<Reservation> GetReservationAsync(Guid reservationId) =>
         (await http.GetFromJsonAsync<Reservation>($"/booking/reservations/{reservationId}"))!;
 

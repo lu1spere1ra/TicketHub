@@ -6,10 +6,16 @@ var postgres = builder.AddPostgres("postgres", port: 5224)
     .WithImage("library/postgres", "17-alpine");
 var catalogDb = postgres.AddDatabase("catalogdb");
 var bookingDb = postgres.AddDatabase("bookingdb");
+var paymentsDb = postgres.AddDatabase("paymentsdb");
+var notificationsDb = postgres.AddDatabase("notificationsdb");
 
 var rabbitMq = builder.AddRabbitMQ("rabbitmq", port: 5223)
     .WithManagementPlugin(port: 5222)
     .WithImage("library/rabbitmq", "4-management-alpine");
+
+var mailpit = builder.AddContainer("mailpit", "axllent/mailpit", "v1.27")
+    .WithHttpEndpoint(port: 5221, targetPort: 8025, name: "http")
+    .WithEndpoint(targetPort: 1025, name: "smtp", scheme: "tcp");
 
 // Catalog declares two Kestrel endpoints in appsettings.json: "http" (REST, HTTP/1.1) and "grpc" (cleartext HTTP/2).
 var catalog = builder.AddProject<Projects.TicketHub_Catalog>("catalog")
@@ -24,6 +30,23 @@ var booking = builder.AddProject<Projects.TicketHub_Booking>("booking")
     .WithReference(rabbitMq).WaitFor(rabbitMq)
     .WithReference(catalog).WaitFor(catalog)
     .WithEnvironment("Booking__Holds__Duration", builder.Configuration["Booking:Holds:Duration"] ?? "00:10:00")
+    .WithEnvironment("Booking__Expiry__PollInterval", builder.Configuration["Booking:Expiry:PollInterval"] ?? "00:00:05")
+    .WithHttpHealthCheck("/health/ready");
+
+builder.AddProject<Projects.TicketHub_Payments>("payments")
+    .WithReference(paymentsDb).WaitFor(paymentsDb)
+    .WithReference(rabbitMq).WaitFor(rabbitMq)
+    .WithEnvironment("Payments__Simulator__DeclineRate", builder.Configuration["Payments:Simulator:DeclineRate"] ?? "0.10")
+    .WithEnvironment("Payments__Simulator__TransientFailureRate", builder.Configuration["Payments:Simulator:TransientFailureRate"] ?? "0.10")
+    .WithHttpHealthCheck("/health/ready");
+
+var smtp = mailpit.GetEndpoint("smtp");
+builder.AddProject<Projects.TicketHub_Notifications>("notifications")
+    .WithReference(notificationsDb).WaitFor(notificationsDb)
+    .WithReference(rabbitMq).WaitFor(rabbitMq)
+    .WithEnvironment("Smtp__Host", smtp.Property(EndpointProperty.Host))
+    .WithEnvironment("Smtp__Port", smtp.Property(EndpointProperty.Port))
+    .WaitFor(mailpit)
     .WithHttpHealthCheck("/health/ready");
 
 builder.AddProject<Projects.TicketHub_Gateway>("gateway")

@@ -22,7 +22,14 @@ public sealed class AppHostFixture : IAsyncLifetime
     {
         using var cts = new CancellationTokenSource(StartupTimeout);
         var builder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.TicketHub_AppHost>(
-            ["--Booking:Holds:Duration=00:00:05"], cts.Token);
+            [
+                "--Booking:Holds:Duration=00:00:05",
+                "--Booking:Expiry:PollInterval=00:00:01",
+                // Outcomes are chosen with deterministic test card tokens instead of dice.
+                "--Payments:Simulator:DeclineRate=0",
+                "--Payments:Simulator:TransientFailureRate=0",
+            ],
+            cts.Token);
         builder.Services.AddLogging(logging => logging.SetMinimumLevel(LogLevel.Warning));
 
         _app = await builder.BuildAsync(cts.Token);
@@ -31,6 +38,8 @@ public sealed class AppHostFixture : IAsyncLifetime
     }
 
     public HttpClient CreateGatewayClient() => App.CreateHttpClient("gateway");
+
+    public HttpClient CreateMailpitClient() => App.CreateHttpClient("mailpit", "http");
 
     public async ValueTask DisposeAsync()
     {
