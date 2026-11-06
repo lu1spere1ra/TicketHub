@@ -6,4 +6,15 @@
     <UserSecretsId>7d3c1f2e-tickethub-apphost</UserSecretsId>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+    <PackageReference Include="Aspire.Hosting.RabbitMQ" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../TicketHub.Catalog/TicketHub.Catalog.csproj" />
+    <ProjectReference Include="../TicketHub.Booking/TicketHub.Booking.csproj" />
+    <ProjectReference Include="../TicketHub.Gateway/TicketHub.Gateway.csproj" />
+  </ItemGroup>
+
 </Project>
