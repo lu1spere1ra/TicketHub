@@ -1,0 +1,27 @@
+name: docker
+
+on:
+  push:
+    branches: [main, "claude/**"]
+    paths: ["src/**", "Dockerfile", ".dockerignore", "deploy/**", "Directory.*.props", "global.json", ".github/workflows/docker.yml"]
+  pull_request:
+    paths: ["src/**", "Dockerfile", ".dockerignore", "deploy/**", "Directory.*.props", "global.json", ".github/workflows/docker.yml"]
+
+jobs:
+  compose:
+    # Builds every image, starts the docker-compose stack and runs the smoke test through the gateway.
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build images
+        run: docker compose -f deploy/docker-compose.yml build
+      - name: Start stack
+        run: docker compose -f deploy/docker-compose.yml up -d --wait --wait-timeout 300 postgres rabbitmq redis keycloak && docker compose -f deploy/docker-compose.yml up -d
+      - name: Smoke test
+        run: |
+          for i in $(seq 1 60); do curl -sf http://localhost:5250/catalog/events > /dev/null && break; sleep 3; done
+          scripts/compose-smoke.sh
+      - name: Logs on failure
+        if: failure()
+        run: docker compose -f deploy/docker-compose.yml logs --tail 200

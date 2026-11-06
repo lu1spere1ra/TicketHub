@@ -1,0 +1,153 @@
+# TicketHub without Aspire. Host ports are all in 5250-5299 (Aspire uses 5200-5249, so both can run at once).
+#
+#   docker compose -f deploy/docker-compose.yml up --build -d
+#
+# Gateway: http://localhost:5250 · Dashboard (traces): http://localhost:5251 · Keycloak: http://localhost:5260
+# Mailpit: http://localhost:5261 · RabbitMQ: http://localhost:5262 (guest/guest)
+
+name: tickethub
+
+x-service-defaults: &service-defaults
+  restart: unless-stopped
+  build: &build
+    context: ..
+    dockerfile: Dockerfile
+
+# GSS Encryption Mode=Disable: chiseled images ship no Kerberos library, so Npgsql should not try it.
+x-service-env: &service-env
+  ASPNETCORE_ENVIRONMENT: Production
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://dashboard:18889
+  ConnectionStrings__rabbitmq: amqp://guest:guest@rabbitmq:5672
+  # Tokens are issued for the public URL (what k6 and browsers use); containers fetch keys over the internal one.
+  Auth__Authority: http://keycloak:8080/realms/tickethub
+  Auth__MetadataAddress: http://keycloak:8080/realms/tickethub/.well-known/openid-configuration
+  Auth__ValidIssuer: http://localhost:5260/realms/tickethub
+
+x-depends-on-infra: &depends-on-infra
+  postgres: { condition: service_healthy }
+  rabbitmq: { condition: service_healthy }
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    command: ["postgres", "-c", "max_connections=300"]
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports: ["5264:5432"]
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    ports: ["5263:5672", "5262:15672"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      retries: 30
+
+  redis:
+    image: redis:8-alpine
+    ports: ["5265:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 20
+
+  keycloak:
+    image: keycloak/keycloak:26.4
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: "true"
+      # Fixed public issuer, so tokens validate no matter which network the client used to get them.
+      KC_HOSTNAME: http://localhost:5260
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+    ports: ["5260:8080"]
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import:ro
+    healthcheck:
+      # The image has no curl; bash can still speak HTTP to the management port.
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"status\": \"UP\"' <&3"]
+      interval: 5s
+      retries: 60
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports: ["5261:8025"]
+
+  dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:13.6.2
+    environment:
+      DASHBOARD__FRONTEND__AUTHMODE: Unsecured
+      DASHBOARD__OTLP__AUTHMODE: Unsecured
+    ports: ["5251:18888"]
+
+  catalog:
+    <<: *service-defaults
+    build: { <<: *build, target: catalog, args: { SERVICE: Catalog } }
+    image: tickethub/catalog
+    environment:
+      <<: *service-env
+      OTEL_SERVICE_NAME: catalog
+      ConnectionStrings__catalogdb: Host=postgres;Database=catalogdb;Username=postgres;Password=postgres;GSS Encryption Mode=Disable
+      ConnectionStrings__redis: redis:6379
+    depends_on:
+      <<: *depends-on-infra
+      redis: { condition: service_healthy }
+      keycloak: { condition: service_healthy }
+
+  booking:
+    <<: *service-defaults
+    build: { <<: *build, target: booking, args: { SERVICE: Booking } }
+    image: tickethub/booking
+    environment:
+      <<: *service-env
+      OTEL_SERVICE_NAME: booking
+      ConnectionStrings__bookingdb: Host=postgres;Database=bookingdb;Username=postgres;Password=postgres;Maximum Pool Size=80;GSS Encryption Mode=Disable
+      services__catalog__grpc__0: http://catalog:8081
+    depends_on:
+      <<: *depends-on-infra
+      keycloak: { condition: service_healthy }
+      catalog: { condition: service_started }
+
+  payments:
+    <<: *service-defaults
+    build: { <<: *build, target: payments, args: { SERVICE: Payments } }
+    image: tickethub/payments
+    environment:
+      <<: *service-env
+      OTEL_SERVICE_NAME: payments
+      ConnectionStrings__paymentsdb: Host=postgres;Database=paymentsdb;Username=postgres;Password=postgres;GSS Encryption Mode=Disable
+    depends_on: *depends-on-infra
+
+  notifications:
+    <<: *service-defaults
+    build: { <<: *build, target: notifications, args: { SERVICE: Notifications } }
+    image: tickethub/notifications
+    environment:
+      <<: *service-env
+      OTEL_SERVICE_NAME: notifications
+      ConnectionStrings__notificationsdb: Host=postgres;Database=notificationsdb;Username=postgres;Password=postgres;GSS Encryption Mode=Disable
+      Smtp__Host: mailpit
+      Smtp__Port: "1025"
+    depends_on: *depends-on-infra
+
+  gateway:
+    <<: *service-defaults
+    build: { <<: *build, target: gateway, args: { SERVICE: Gateway } }
+    image: tickethub/gateway
+    environment:
+      <<: *service-env
+      OTEL_SERVICE_NAME: gateway
+      services__catalog__http__0: http://catalog:8080
+      services__booking__http__0: http://booking:8080
+    ports: ["5250:8080"]
+    depends_on:
+      catalog: { condition: service_started }
+      booking: { condition: service_started }
