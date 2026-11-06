@@ -14,7 +14,8 @@ public sealed class PostgresContainer : IAsyncLifetime
 {
     public const string Image = "postgres:17-alpine";
 
-    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder(Image).Build();
+    // Several test hosts share this server in parallel, each with its own connection pool.
+    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder(Image).WithCommand("-c", "max_connections=500").Build();
 
     public async ValueTask InitializeAsync() => await _container.StartAsync();
 
