@@ -1,0 +1,34 @@
+name: payments
+
+on:
+  push:
+    branches: [main, "claude/**"]
+    paths:
+      - "src/TicketHub.Payments/**"
+      - "src/TicketHub.BuildingBlocks/**"
+      - "src/TicketHub.Contracts/**"
+      - "src/TicketHub.ServiceDefaults/**"
+      - "tests/TicketHub.Payments.Tests/**"
+      - "tests/TicketHub.TestKit/**"
+      - "Directory.*.props"
+      - "global.json"
+      - ".github/workflows/payments.yml"
+      - ".github/workflows/_dotnet-test.yml"
+  pull_request:
+    paths:
+      - "src/TicketHub.Payments/**"
+      - "src/TicketHub.BuildingBlocks/**"
+      - "src/TicketHub.Contracts/**"
+      - "src/TicketHub.ServiceDefaults/**"
+      - "tests/TicketHub.Payments.Tests/**"
+      - "tests/TicketHub.TestKit/**"
+      - "Directory.*.props"
+      - "global.json"
+      - ".github/workflows/payments.yml"
+      - ".github/workflows/_dotnet-test.yml"
+
+jobs:
+  test:
+    uses: ./.github/workflows/_dotnet-test.yml
+    with:
+      project: tests/TicketHub.Payments.Tests

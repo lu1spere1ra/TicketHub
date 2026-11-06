@@ -1,0 +1,34 @@
+name: notifications
+
+on:
+  push:
+    branches: [main, "claude/**"]
+    paths:
+      - "src/TicketHub.Notifications/**"
+      - "src/TicketHub.BuildingBlocks/**"
+      - "src/TicketHub.Contracts/**"
+      - "src/TicketHub.ServiceDefaults/**"
+      - "tests/TicketHub.Notifications.Tests/**"
+      - "tests/TicketHub.TestKit/**"
+      - "Directory.*.props"
+      - "global.json"
+      - ".github/workflows/notifications.yml"
+      - ".github/workflows/_dotnet-test.yml"
+  pull_request:
+    paths:
+      - "src/TicketHub.Notifications/**"
+      - "src/TicketHub.BuildingBlocks/**"
+      - "src/TicketHub.Contracts/**"
+      - "src/TicketHub.ServiceDefaults/**"
+      - "tests/TicketHub.Notifications.Tests/**"
+      - "tests/TicketHub.TestKit/**"
+      - "Directory.*.props"
+      - "global.json"
+      - ".github/workflows/notifications.yml"
+      - ".github/workflows/_dotnet-test.yml"
+
+jobs:
+  test:
+    uses: ./.github/workflows/_dotnet-test.yml
+    with:
+      project: tests/TicketHub.Notifications.Tests
