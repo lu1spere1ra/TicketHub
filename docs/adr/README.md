@@ -19,5 +19,6 @@ Each ADR records one decision that a reviewer could reasonably question. They us
 | [0007](0007-retry-and-dead-letter-topology.md) | Message retries and dead-lettering | Accepted |
 | [0008](0008-resilience-policies.md) | Resilience policies | Accepted |
 | [0009](0009-catalog-caching.md) | Catalog caching: cache what is static, read what is live | Accepted |
+| [0010](0010-authentication-with-keycloak.md) | Authentication with Keycloak and JWT validation at every hop | Accepted |
 | [0011](0011-distributed-tracing-through-outbox.md) | Distributed tracing across the outbox and the broker | Accepted |
 | [0012](0012-code-organisation.md) | Code organisation: one project per service, vertical slices | Accepted |
