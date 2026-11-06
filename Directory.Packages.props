@@ -1,0 +1,63 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <AspireVersion>13.6.4</AspireVersion>
+    <ExtensionsVersion>10.11.0</ExtensionsVersion>
+    <AspNetCoreVersion>10.0.14</AspNetCoreVersion>
+    <OpenTelemetryVersion>1.20.1</OpenTelemetryVersion>
+    <GrpcVersion>2.85.0</GrpcVersion>
+    <TestcontainersVersion>4.16.0</TestcontainersVersion>
+  </PropertyGroup>
+
+  <ItemGroup Label="Aspire">
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.Redis" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.Testing" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.RabbitMQ.Client" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.StackExchange.Redis.DistributedCaching" Version="$(AspireVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Label="Platform">
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="$(AspNetCoreVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="$(AspNetCoreVersion)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="$(AspNetCoreVersion)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="$(AspNetCoreVersion)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="$(AspNetCoreVersion)" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.Hybrid" Version="$(ExtensionsVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(ExtensionsVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(ExtensionsVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery.Yarp" Version="$(ExtensionsVersion)" />
+    <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0" />
+    <PackageVersion Include="RabbitMQ.Client" Version="7.2.2" />
+    <PackageVersion Include="Grpc.AspNetCore" Version="$(GrpcVersion)" />
+    <PackageVersion Include="Grpc.Net.ClientFactory" Version="$(GrpcVersion)" />
+    <PackageVersion Include="Grpc.Tools" Version="$(GrpcVersion)" />
+    <PackageVersion Include="Google.Protobuf" Version="3.36.2" />
+    <PackageVersion Include="MailKit" Version="4.18.2" />
+  </ItemGroup>
+
+  <ItemGroup Label="Observability">
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="$(OpenTelemetryVersion)" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="$(OpenTelemetryVersion)" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="$(OpenTelemetryVersion)" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.20.2" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="$(OpenTelemetryVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Label="Testing">
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageVersion Include="xunit.v3" Version="4.0.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
+    <PackageVersion Include="Shouldly" Version="4.3.0" />
+    <PackageVersion Include="NSubstitute" Version="6.2.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="$(AspNetCoreVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="$(ExtensionsVersion)" />
+    <PackageVersion Include="Testcontainers" Version="$(TestcontainersVersion)" />
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="$(TestcontainersVersion)" />
+    <PackageVersion Include="Testcontainers.RabbitMq" Version="$(TestcontainersVersion)" />
+    <PackageVersion Include="Testcontainers.Redis" Version="$(TestcontainersVersion)" />
+  </ItemGroup>
+</Project>

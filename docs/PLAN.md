@@ -1,6 +1,20 @@
 # TicketHub — Implementation Plan
 
-> **Status:** Draft, awaiting approval. No application code is written until this plan is approved.
+> **Status:** Approved, with one instruction: *no more technology than necessary; keep it clean, no over-engineering.* Revision 1 below applies that instruction and overrides anything else in this document.
+
+## Revision 1 — simplifications
+
+| Removed or simplified | Why |
+|---|---|
+| Redis admission lock (old Task 3.4) | Optimistic concurrency already guarantees zero overbooking, and the brief asks for one mechanism *or* the other. Redis is used only for the catalog cache. ADR-0004 explains why a Redis lock would not add safety. |
+| `Idempotency-Key` support (old Task 3.5, RF-4) | Not in the brief. Listed as future work. |
+| Polly pipelines in Payments and Notifications (old Task 3.2) | Message-level retries already cover transient failures in consumers. HTTP resilience stays where the brief puts it: the Booking → Catalog gRPC client. |
+| Four retry delay levels | One retry queue with a fixed delay (5 s) and at most 5 attempts, then dead-letter. |
+| Dead-letter replay endpoint | Not in the brief. The admin endpoint lists dead letters. |
+| `sell-out.js` k6 scenario | Not in the brief. Only the same-seat race remains. |
+| Separate `*.Domain`, `*.UnitTests` and `*.IntegrationTests` projects | One project per service, with a `Domain/` folder. One test project per service, with `Domain/` (pure unit tests) and `Integration/` (Testcontainers) folders. One shared `TicketHub.Contracts` project for all messages. |
+
+No application code is written beyond what this plan describes.
 
 **Goal:** An event ticketing platform built as .NET 10 microservices with event-driven workflows, which can be shown never to sell the same seat twice.
 
@@ -8,7 +22,7 @@
 
 **Tech stack:**
 - **Runtime and APIs:** .NET 10 (LTS), Aspire 13.6, ASP.NET Core minimal APIs, gRPC
-- **Data and messaging:** EF Core 10 + Npgsql, RabbitMQ.Client 7, Redis (HybridCache L2 and an admission lock)
+- **Data and messaging:** EF Core 10 + Npgsql, RabbitMQ.Client 7, Redis (HybridCache L2 for the catalog)
 - **Edge and identity:** YARP 2.3, Keycloak 26 (OIDC/JWT)
 - **Operations:** OpenTelemetry, Microsoft.Extensions.Http.Resilience, MailKit + Mailpit
 - **Testing and CI:** xUnit v3 + Shouldly + NSubstitute, Testcontainers, Aspire.Hosting.Testing, k6, GitHub Actions

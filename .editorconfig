@@ -1,0 +1,29 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{json,yml,yaml,xml,csproj,props,targets,slnx,proto}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.cs]
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_prefer_primary_constructors = true:suggestion
+dotnet_style_qualification_for_field = false:warning
+dotnet_sort_system_directives_first = true
+
+# Async methods in tests and handlers are named by behaviour, not suffixed.
+dotnet_diagnostic.CA1707.severity = none
+# ConfigureAwait is irrelevant in ASP.NET Core / generic host apps.
+dotnet_diagnostic.CA2007.severity = none

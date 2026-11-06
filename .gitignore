@@ -1,0 +1,11 @@
+bin/
+obj/
+.vs/
+.idea/
+.vscode/
+*.user
+*.swp
+TestResults/
+artifacts/
+loadtests/results/*.tmp
+.DS_Store

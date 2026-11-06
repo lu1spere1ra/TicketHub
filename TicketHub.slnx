@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TicketHub.AppHost/TicketHub.AppHost.csproj" />
+    <Project Path="src/TicketHub.ServiceDefaults/TicketHub.ServiceDefaults.csproj" />
+  </Folder>
+</Solution>
